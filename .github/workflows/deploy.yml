@@ -1,4 +1,4 @@
-name: Deploy to Vercel
+name: CI
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -22,22 +22,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Lint
+        run: npm run lint
+
       - name: Build
         run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
 
-      - name: Deploy to Vercel (Production)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: vercel/action-deploy@v1
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--prod'
-
-      - name: Deploy to Vercel (Preview)
-        if: github.event_name == 'pull_request'
-        uses: vercel/action-deploy@v1
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+# 注意：Vercel 会自动从 GitHub 仓库部署
+# 无需在此配置额外的部署步骤
+# 只需在 Vercel 控制台连接 GitHub 仓库即可

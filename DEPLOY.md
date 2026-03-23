@@ -1,8 +1,8 @@
 # 部署指南
 
-## Vercel 自动部署
+## Vercel 自动部署（推荐）
 
-本项目配置了 GitHub Actions，支持推送到 `main` 分支时自动部署到 Vercel。
+Vercel 原生支持 Next.js，并且与 GitHub 集成非常好。
 
 ### 配置步骤
 
@@ -11,47 +11,38 @@
 1. 登录 [Vercel](https://vercel.com)
 2. 点击 **Add New Project**
 3. 导入 GitHub 仓库 `KPGH-FJ/aafa-community`
-4. 配置项目：
-   - **Framework Preset**: Next.js
-   - **Build Command**: `npm run build`
-   - **Output Directory**: `dist`
+4. 配置项目（使用默认即可）：
+   - **Framework Preset**: `Next.js`
+   - **Build Command**: `next build`（默认）
+   - **Output Directory**: 留空（默认）
+   - **Install Command**: `npm install`（默认）
 5. 点击 **Deploy**
 
-#### 2. 获取 Vercel Token
+#### 2. 自动部署
 
-1. 进入 [Vercel Settings > Tokens](https://vercel.com/account/tokens)
-2. 点击 **Create Token**
-3. 输入名称（如 `GitHub Actions`）
-4. 复制生成的 Token
+配置完成后，每次推送到 `main` 分支，Vercel 会自动：
+- 拉取最新代码
+- 运行 `npm install`
+- 运行 `next build`
+- 部署到生产环境
 
-#### 3. 配置 GitHub Secrets
+无需额外的 GitHub Actions 配置！
 
-在 GitHub 仓库设置中添加以下 Secrets：
+#### 3. 预览部署
 
-1. 打开仓库页面 → **Settings** → **Secrets and variables** → **Actions**
-2. 点击 **New repository secret**，添加：
+对于 Pull Request，Vercel 会自动创建预览链接，方便在合并前预览更改。
 
-| Secret Name | 获取方式 |
-|------------|---------|
-| `VERCEL_TOKEN` | 上一步创建的 Vercel Token |
-| `VERCEL_ORG_ID` | Vercel 项目设置中的 Organization ID |
-| `VERCEL_PROJECT_ID` | Vercel 项目设置中的 Project ID |
+---
 
-获取 Org ID 和 Project ID：
-- 在项目根目录运行：`vercel link`
-- 或查看 Vercel 项目设置页面 URL
+### 常见问题
 
-#### 4. 测试自动部署
+#### 部署失败
 
-配置完成后，推送到 main 分支将自动触发部署：
+如果看到 `routes-manifest.json` 错误，这是因为项目之前配置了静态导出（`output: 'export'`）。
 
-```bash
-git add .
-git commit -m "Add GitHub Actions workflow"
-git push origin main
-```
+**解决方案**：确保 `next.config.ts` 中没有设置 `output: 'export'`，让 Vercel 使用默认的 Next.js 服务端渲染模式。
 
-在 GitHub 仓库的 **Actions** 标签页可以查看部署状态。
+当前配置已修复，直接使用默认配置即可。
 
 ---
 
