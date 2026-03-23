@@ -1,5 +1,9 @@
+'use client';
+
+import { useState } from 'react';
 import { Container } from '@/components/ui/Container';
 import { Button } from '@/components/ui/Button';
+import { newsletterApi } from '@/lib/api';
 
 export const metadata = {
   title: '加入社区 - AAFA',
@@ -7,6 +11,27 @@ export const metadata = {
 };
 
 export default function JoinPage() {
+  const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [message, setMessage] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setStatus('loading');
+    
+    try {
+      await newsletterApi.subscribe(email, name);
+      setStatus('success');
+      setMessage('订阅成功！感谢您的关注。');
+      setEmail('');
+      setName('');
+    } catch (error) {
+      setStatus('error');
+      setMessage('订阅失败，请稍后重试或直接联系我们。');
+    }
+  };
+
   return (
     <div className="min-h-screen">
       {/* Header */}
@@ -70,81 +95,51 @@ export default function JoinPage() {
                 每周一封，精选AI世界最有价值的信息。无垃圾邮件，随时退订。
               </p>
               
-              <form className="space-y-4">
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-[#5C5852] mb-2">
-                    邮箱地址
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    placeholder="your@email.com"
-                    className="w-full px-4 py-3 rounded-lg border border-[#E5E2DE] focus:border-[#C9A89A] focus:ring-2 focus:ring-[#C9A89A]/20 outline-none transition-all"
-                  />
+              {status === 'success' ? (
+                <div className="p-4 bg-[#B8C4A3] bg-opacity-20 rounded-lg text-center">
+                  <p className="text-[#2C2C2C] font-medium">{message}</p>
                 </div>
-                <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-[#5C5852] mb-2">
-                    称呼（可选）
-                  </label>
-                  <input
-                    type="text"
-                    id="name"
-                    placeholder="怎么称呼你？"
-                    className="w-full px-4 py-3 rounded-lg border border-[#E5E2DE] focus:border-[#C9A89A] focus:ring-2 focus:ring-[#C9A89A]/20 outline-none transition-all"
-                  />
-                </div>
-                <Button type="submit" className="w-full">
-                  立即订阅
-                </Button>
-              </form>
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div>
+                    <label htmlFor="email" className="block text-sm font-medium text-[#5C5852] mb-2">
+                      邮箱地址
+                    </label>
+                    <input
+                      type="email"
+                      id="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="your@email.com"
+                      required
+                      className="w-full px-4 py-3 rounded-lg border border-[#E5E2DE] focus:border-[#C9A89A] focus:ring-2 focus:ring-[#C9A89A]/20 outline-none transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="name" className="block text-sm font-medium text-[#5C5852] mb-2">
+                      称呼（可选）
+                    </label>
+                    <input
+                      type="text"
+                      id="name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="怎么称呼你？"
+                      className="w-full px-4 py-3 rounded-lg border border-[#E5E2DE] focus:border-[#C9A89A] focus:ring-2 focus:ring-[#C9A89A]/20 outline-none transition-all"
+                    />
+                  </div>
+                  <Button type="submit" className="w-full" disabled={status === 'loading'}>
+                    {status === 'loading' ? '订阅中...' : '立即订阅'}
+                  </Button>
+                  {status === 'error' && (
+                    <p className="text-sm text-red-500 text-center">{message}</p>
+                  )}
+                </form>
+              )}
               
               <p className="text-xs text-[#A8A49D] text-center mt-4">
                 订阅即表示你同意接收我们的邮件。我们尊重你的隐私。
               </p>
-            </div>
-          </div>
-        </Container>
-      </section>
-
-      {/* Contact */}
-      <section className="section-padding bg-white">
-        <Container>
-          <div className="max-w-2xl mx-auto text-center">
-            <h2 className="text-2xl font-serif font-bold text-[#2C2C2C] mb-4">
-              其他方式联系我们
-            </h2>
-            <p className="text-[#7A7670] mb-8">
-              有任何问题或建议？欢迎通过以下方式联系我们
-            </p>
-            
-            <div className="flex flex-wrap items-center justify-center gap-6">
-              <a
-                href="#"
-                className="flex items-center gap-2 px-6 py-3 bg-[#F0EEEB] rounded-full text-[#5C5852] hover:bg-[#E8DED4] transition-colors"
-              >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 01.213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 00.167-.054l1.903-1.114a.864.864 0 01.717-.098 10.16 10.16 0 002.837.403c.276 0 .543-.027.811-.05-.857-2.578.157-4.972 1.932-6.446 1.703-1.415 3.882-1.98 5.853-1.838-.576-3.583-4.196-6.348-8.596-6.348zM5.785 5.991c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 01-1.162 1.178A1.17 1.17 0 014.623 7.17c0-.651.52-1.18 1.162-1.18zm5.813 0c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 01-1.162 1.178 1.17 1.17 0 01-1.162-1.178c0-.651.52-1.18 1.162-1.18zm5.34 2.867c-1.797-.052-3.746.512-5.28 1.786-1.72 1.428-2.687 3.72-1.78 6.22.942 2.453 3.666 4.229 6.884 4.229.826 0 1.622-.12 2.361-.336a.722.722 0 01.598.082l1.584.926a.272.272 0 00.14.047c.134 0 .24-.111.24-.247 0-.06-.023-.12-.038-.177l-.327-1.233a.582.582 0 01-.023-.156.49.49 0 01.201-.398C23.024 18.48 24 16.82 24 14.98c0-3.21-2.931-5.837-6.656-6.088V8.89c-.135-.01-.27-.027-.407-.03zm-2.53 3.274c.535 0 .969.44.969.982a.976.976 0 01-.969.983.976.976 0 01-.969-.983c0-.542.434-.982.97-.982zm4.844 0c.535 0 .969.44.969.982a.976.976 0 01-.969.983.976.976 0 01-.969-.983c0-.542.434-.982.969-.982z"/>
-                </svg>
-                公众号
-              </a>
-              <a
-                href="#"
-                className="flex items-center gap-2 px-6 py-3 bg-[#F0EEEB] rounded-full text-[#5C5852] hover:bg-[#E8DED4] transition-colors"
-              >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/>
-                </svg>
-                Telegram
-              </a>
-              <a
-                href="mailto:hello@aafa.org"
-                className="flex items-center gap-2 px-6 py-3 bg-[#F0EEEB] rounded-full text-[#5C5852] hover:bg-[#E8DED4] transition-colors"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-                hello@aafa.org
-              </a>
             </div>
           </div>
         </Container>

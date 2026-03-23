@@ -1,4 +1,5 @@
-import { articles, categories } from '@/data/articles';
+import { articlesApi } from '@/lib/api';
+import { articles as mockArticles, categories } from '@/data/articles';
 import { Card, CardImage, CardContent, CardTitle, CardDescription, CardFooter } from '@/components/ui/Card';
 import { Tag } from '@/components/ui/Tag';
 import { Container } from '@/components/ui/Container';
@@ -8,7 +9,24 @@ export const metadata = {
   description: '去伪存真，为你筛选AI世界最有价值的信息。精选AI真相揭秘、工具实操、人文思考等内容。',
 };
 
-export default function ArticlesPage() {
+// 获取文章数据（服务端）
+async function getArticles() {
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1'}/articles`, {
+      next: { revalidate: 60 }, // 每60秒重新验证
+    });
+    if (!response.ok) throw new Error('Failed to fetch');
+    const data = await response.json();
+    return data.articles || mockArticles; // 如果API失败，使用mock数据
+  } catch (error) {
+    console.log('Using mock data:', error);
+    return mockArticles;
+  }
+}
+
+export default async function ArticlesPage() {
+  const articles = await getArticles();
+
   return (
     <div className="min-h-screen">
       {/* Header */}
@@ -48,15 +66,15 @@ export default function ArticlesPage() {
       <section className="section-padding bg-[#FAFAF8]">
         <Container>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {articles.map((article) => (
+            {articles.map((article: any) => (
               <Card key={article.id} href={`/articles/${article.id}`} className="h-full">
-                <CardImage src={article.coverImage} alt={article.title} aspectRatio="video" />
+                <CardImage src={article.coverImage || ''} alt={article.title} aspectRatio="video" />
                 <CardContent className="flex-1">
                   <div className="flex items-center gap-2 mb-3">
                     <Tag variant={article.featured ? 'accent' : 'default'}>
-                      {article.category}
+                      {article.category?.name || '文章'}
                     </Tag>
-                    <span className="text-xs text-[#A8A49D]">{article.readTime} 分钟</span>
+                    <span className="text-xs text-[#A8A49D]">{article.readTime || 5} 分钟</span>
                   </div>
                   <CardTitle className="text-lg">{article.title}</CardTitle>
                   <CardDescription>{article.excerpt}</CardDescription>
@@ -64,9 +82,11 @@ export default function ArticlesPage() {
                 <CardFooter>
                   <div className="flex items-center gap-2">
                     <div className="w-6 h-6 rounded-full bg-[#E8DED4]" />
-                    <span className="text-sm text-[#5C5852]">{article.author.name}</span>
+                    <span className="text-sm text-[#5C5852]">{article.author?.name || 'AAFA'}</span>
                   </div>
-                  <span className="text-xs text-[#A8A49D]">{article.publishedAt}</span>
+                  <span className="text-xs text-[#A8A49D]">
+                    {new Date(article.createdAt).toLocaleDateString()}
+                  </span>
                 </CardFooter>
               </Card>
             ))}
