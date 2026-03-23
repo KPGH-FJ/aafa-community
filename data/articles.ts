@@ -1,0 +1,116 @@
+import { Article } from '@/types';
+
+export const articles: Article[] = [
+  {
+    id: '1',
+    title: '实测：Cursor真的能提高3倍编程效率吗？',
+    excerpt: '我们花了两周时间，让5位不同水平的开发者使用Cursor进行真实项目开发，结果出乎意料...',
+    content: '...',
+    coverImage: '/images/article-1.jpg',
+    category: 'AI真相揭秘',
+    tags: ['Cursor', '编程工具', '效率测评'],
+    author: {
+      name: 'AAFA编辑部',
+      avatar: '/images/avatar-1.jpg',
+    },
+    publishedAt: '2024-03-20',
+    readTime: 8,
+    featured: true,
+  },
+  {
+    id: '2',
+    title: 'AGI时代，什么技能不会贬值？',
+    excerpt: '当AI能写出比你更好的代码、画出比你更美的画，人类还剩下什么不可替代的价值？',
+    content: '...',
+    coverImage: '/images/article-2.jpg',
+    category: '人文思考',
+    tags: ['AGI', '职业发展', '未来技能'],
+    author: {
+      name: '林小鱼',
+      avatar: '/images/avatar-2.jpg',
+    },
+    publishedAt: '2024-03-18',
+    readTime: 12,
+    featured: true,
+  },
+  {
+    id: '3',
+    title: '非程序员如何用AI做数据分析',
+    excerpt: '不用写Python，不用学SQL，ChatGPT+Claude组合拳让数据分析变得像聊天一样简单。',
+    content: '...',
+    coverImage: '/images/article-3.jpg',
+    category: '工具实操',
+    tags: ['ChatGPT', 'Claude', '数据分析'],
+    author: {
+      name: '数据小白',
+      avatar: '/images/avatar-3.jpg',
+    },
+    publishedAt: '2024-03-15',
+    readTime: 6,
+  },
+  {
+    id: '4',
+    title: '避雷：这5款"AI神器"千万别买',
+    excerpt: '我们测试了市面上热门的AI工具，发现这些产品要么功能鸡肋，要么纯属智商税...',
+    content: '...',
+    coverImage: '/images/article-4.jpg',
+    category: 'AI真相揭秘',
+    tags: ['避雷', '产品测评', '避坑指南'],
+    author: {
+      name: 'AAFA编辑部',
+      avatar: '/images/avatar-1.jpg',
+    },
+    publishedAt: '2024-03-12',
+    readTime: 5,
+  },
+  {
+    id: '5',
+    title: 'OpenAI的野心：GPT-5会改变什么？',
+    excerpt: '深度解析OpenAI最新技术路线图，以及它可能对整个AI行业产生的连锁反应。',
+    content: '...',
+    coverImage: '/images/article-5.jpg',
+    category: '前沿资讯',
+    tags: ['OpenAI', 'GPT-5', '行业观察'],
+    author: {
+      name: 'Tech观察者',
+      avatar: '/images/avatar-4.jpg',
+    },
+    publishedAt: '2024-03-10',
+    readTime: 15,
+  },
+  {
+    id: '6',
+    title: '普通人如何用AI做自媒体？',
+    excerpt: '从零开始，用AI工具完成选题、写作、配图、发布的完整工作流。',
+    content: '...',
+    coverImage: '/images/article-6.jpg',
+    category: '工具实操',
+    tags: ['自媒体', '内容创作', 'AI工具'],
+    author: {
+      name: '创作者小王',
+      avatar: '/images/avatar-5.jpg',
+    },
+    publishedAt: '2024-03-08',
+    readTime: 10,
+  },
+];
+
+export const categories = [
+  '全部',
+  'AI真相揭秘',
+  '工具实操',
+  '人文思考',
+  '前沿资讯',
+  '社区动态',
+];
+
+export const tags = [
+  'ChatGPT',
+  'Claude',
+  'Cursor',
+  'AI绘画',
+  '编程工具',
+  '效率提升',
+  'AGI',
+  '避雷指南',
+];

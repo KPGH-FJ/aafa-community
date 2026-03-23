@@ -1,0 +1,62 @@
+import { Event } from '@/types';
+
+export const events: Event[] = [
+  {
+    id: '1',
+    title: 'AI工具漂流瓶：带上你最爱的AI工具来交换',
+    description: '每个人分享一款自己最常用的AI工具，讲述使用心得和踩过的坑。没有PPT，只有真实体验。',
+    coverImage: '/images/event-1.jpg',
+    date: '2024-04-06',
+    time: '14:00 - 17:00',
+    location: '上海市静安区某咖啡馆',
+    status: 'upcoming',
+    maxAttendees: 20,
+    currentAttendees: 15,
+    price: 49,
+    tags: ['线下活动', '工具分享', '社交'],
+  },
+  {
+    id: '2',
+    title: 'AGI辩论赛：AI会取代程序员吗？',
+    description: '正反双方现场辩论，观众投票决定胜负。无论你是AI乐观派还是悲观派，都欢迎来battle。',
+    coverImage: '/images/event-2.jpg',
+    date: '2024-04-13',
+    time: '19:00 - 21:30',
+    location: '线上直播',
+    status: 'upcoming',
+    maxAttendees: 200,
+    currentAttendees: 86,
+    price: 0,
+    tags: ['辩论赛', '线上活动', 'AGI'],
+  },
+  {
+    id: '3',
+    title: 'AI产品共创工作坊',
+    description: '用一天时间，从0到1设计一款AI产品。适合对AI产品感兴趣的非技术背景朋友。',
+    coverImage: '/images/event-3.jpg',
+    date: '2024-04-20',
+    time: '10:00 - 18:00',
+    location: '北京市朝阳区某共享办公空间',
+    status: 'upcoming',
+    maxAttendees: 12,
+    currentAttendees: 8,
+    price: 199,
+    tags: ['工作坊', '产品设计', '共创'],
+  },
+  {
+    id: '4',
+    title: '第一期：AI时代的焦虑与从容',
+    description: '我们邀请了10位不同背景的普通人，聊聊他们对AI的真实感受。没有专家，只有真话。',
+    coverImage: '/images/event-4.jpg',
+    date: '2024-03-15',
+    time: '14:00 - 17:00',
+    location: '上海市静安区',
+    status: 'past',
+    currentAttendees: 18,
+    price: 49,
+    tags: ['线下活动', '对话', '已结束'],
+  },
+];
+
+export const getUpcomingEvents = () => events.filter(e => e.status === 'upcoming');
+export const getPastEvents = () => events.filter(e => e.status === 'past');
