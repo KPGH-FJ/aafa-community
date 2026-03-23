@@ -30,6 +30,9 @@ yarn-error.log*
 # Vercel
 .vercel
 
+# GitHub Actions (本地测试)
+.actrc
+
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
