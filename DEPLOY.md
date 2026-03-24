@@ -1,128 +1,213 @@
-# 部署指南
+# AAFA 网站部署指南
 
-## Vercel 自动部署（推荐）
+## 📋 项目结构
 
-Vercel 原生支持 Next.js，并且与 GitHub 集成非常好。
+```
+D:\网站\
+├── aafa-website\          # 前端 Next.js 项目
+└── aafa-website-backend\   # 后端 Express 项目
+```
 
-### 配置步骤
+## 🚀 本地开发
 
-#### 1. 在 Vercel 创建项目
+### 1. 启动后端服务
 
-1. 登录 [Vercel](https://vercel.com)
-2. 点击 **Add New Project**
-3. 导入 GitHub 仓库 `KPGH-FJ/aafa-community`
-4. 配置项目（使用默认即可）：
-   - **Framework Preset**: `Next.js`
-   - **Build Command**: `next build`（默认）
-   - **Output Directory**: 留空（默认）
-   - **Install Command**: `npm install`（默认）
-5. 点击 **Deploy**
+```powershell
+cd "D:\网站\aafa-website-backend"
+npm run dev
+```
 
-#### 2. 自动部署
+后端服务运行在: http://localhost:3001
 
-配置完成后，每次推送到 `main` 分支，Vercel 会自动：
-- 拉取最新代码
-- 运行 `npm install`
-- 运行 `next build`
-- 部署到生产环境
+### 2. 启动前端服务
 
-无需额外的 GitHub Actions 配置！
+```powershell
+cd "D:\网站\aafa-website"
+npm run dev
+```
 
-#### 3. 预览部署
+前端服务运行在: http://localhost:3000
 
-对于 Pull Request，Vercel 会自动创建预览链接，方便在合并前预览更改。
+### 3. 访问管理后台
 
----
+- 管理后台: http://localhost:3000/admin
+- 默认账号: `admin@aafa.com` / `admin123456`
 
-### 常见问题
+## 🌐 生产部署
 
-#### 部署失败
+### 方案一：Vercel + Railway/Render
 
-如果看到 `routes-manifest.json` 错误，这是因为项目之前配置了静态导出（`output: 'export'`）。
+#### 前端部署到 Vercel
 
-**解决方案**：确保 `next.config.ts` 中没有设置 `output: 'export'`，让 Vercel 使用默认的 Next.js 服务端渲染模式。
+1. 在 [Vercel](https://vercel.com) 创建账号
+2. 导入 GitHub 仓库
+3. 配置环境变量:
+   ```
+   NEXT_PUBLIC_API_URL=https://your-api-domain.com/api/v1
+   ```
+4. 自动部署
 
-当前配置已修复，直接使用默认配置即可。
+#### 后端部署到 Railway/Render
 
----
+1. 在 [Railway](https://railway.app) 或 [Render](https://render.com) 创建账号
+2. 导入后端代码
+3. 配置环境变量:
+   ```env
+   PORT=3001
+   DATABASE_URL=postgresql://...
+   JWT_SECRET=your-secret-key
+   FRONTEND_URL=https://your-frontend-domain.com
+   ```
+4. 部署
 
-## 手动部署
+### 方案二：自有服务器部署
 
-### 部署到 Vercel
+#### 使用 Docker Compose
 
+创建 `docker-compose.yml`:
+
+```yaml
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: aafa
+      POSTGRES_PASSWORD: your-password
+      POSTGRES_DB: aafa_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  backend:
+    build: ./aafa-website-backend
+    environment:
+      PORT: 3001
+      DATABASE_URL: postgresql://aafa:your-password@db:5432/aafa_db?schema=public
+      JWT_SECRET: your-super-secret-key
+      FRONTEND_URL: http://localhost:3000
+    ports:
+      - "3001:3001"
+    depends_on:
+      - db
+
+  frontend:
+    build: ./aafa-website
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3001/api/v1
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+```
+
+运行:
 ```bash
-# 安装 Vercel CLI
-npm i -g vercel
-
-# 登录
-vercel login
-
-# 部署
-vercel --prod
+docker-compose up -d
 ```
 
-### 部署到 Netlify
+## 🔧 环境变量配置
 
-```bash
-# 安装 Netlify CLI
-npm i -g netlify-cli
+### 后端 (.env)
 
-# 登录
-netlify login
+```env
+# 服务器配置
+PORT=3001
+NODE_ENV=production
 
-# 部署
-netlify deploy --prod --dir=dist
+# 数据库配置
+DATABASE_URL="postgresql://username:password@localhost:5432/aafa_db?schema=public"
+
+# JWT 配置
+JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+JWT_EXPIRES_IN=7d
+
+# 前端地址（用于 CORS）
+FRONTEND_URL=https://your-domain.com
+
+# 文件上传配置
+UPLOAD_DIR=uploads
+MAX_FILE_SIZE=5242880
 ```
 
-### 部署到 GitHub Pages
+### 前端 (.env.local)
 
-1. 修改 `next.config.ts`：
-```typescript
-const nextConfig = {
-  output: 'export',
-  distDir: 'dist',
-  basePath: '/aafa-community', // 仓库名
-  images: {
-    unoptimized: true,
-  },
-}
+```env
+NEXT_PUBLIC_API_URL=https://your-api-domain.com/api/v1
 ```
 
-2. 创建 `.github/workflows/pages.yml` 用于 GitHub Pages 部署
+## 📦 构建生产版本
 
----
+### 构建后端
 
-## 部署配置
-
-### next.config.ts 说明
-
-```typescript
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
-  output: 'export',      // 静态导出
-  distDir: 'dist',       // 输出目录
-  trailingSlash: true,   // URL 末尾加斜杠
-  images: {
-    unoptimized: true,   // 静态导出需要禁用图片优化
-  },
-};
-
-export default nextConfig;
+```powershell
+cd "D:\网站\aafa-website-backend"
+npm run build
+npm start
 ```
 
----
+### 构建前端
 
-## 常见问题
+```powershell
+cd "D:\网站\aafa-website"
+npm run build
+```
 
-### 构建失败
+构建输出在 `dist/` 目录。
 
-检查 Node.js 版本是否 >= 18
+## 🔐 安全配置
 
-### 图片不显示
+1. **修改默认密码**
+   - 首次登录后立即修改管理员密码
 
-静态导出需要设置 `images.unoptimized: true`
+2. **设置强 JWT_SECRET**
+   - 使用随机生成的长字符串
+   - 可以使用: `openssl rand -base64 32`
 
-### 路由 404
+3. **配置 HTTPS**
+   - 生产环境必须使用 HTTPS
+   - 使用 Let's Encrypt 免费证书
 
-确保 `trailingSlash: true` 已配置
+4. **数据库安全**
+   - 使用强密码
+   - 限制数据库访问 IP
+   - 定期备份
+
+## 🔄 数据库迁移
+
+### 从 SQLite 迁移到 PostgreSQL
+
+1. 安装 PostgreSQL
+2. 创建数据库:
+   ```sql
+   CREATE DATABASE aafa_db;
+   ```
+3. 更新后端 `.env`:
+   ```env
+   DATABASE_URL="postgresql://username:password@localhost:5432/aafa_db?schema=public"
+   ```
+4. 恢复 PostgreSQL 版本的 schema:
+   ```powershell
+   cd "D:\网站\aafa-website-backend"
+   Copy-Item prisma/schema-postgresql.prisma prisma/schema.prisma -Force
+   Copy-Item .env.postgresql .env -Force
+   ```
+5. 重新生成 Prisma Client 并迁移:
+   ```powershell
+   npx prisma generate
+   npx prisma migrate dev
+   npm run db:seed
+   ```
+
+## 📞 技术支持
+
+如有问题，请检查:
+1. 后端服务是否正常运行: `http://localhost:3001/health`
+2. 数据库连接是否正确
+3. 环境变量是否配置正确
+4. CORS 配置是否允许前端域名
