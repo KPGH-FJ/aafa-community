@@ -1,12 +1,27 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
+import { toast } from 'sonner';
 import { Container } from '@/components/ui/Container';
 import { Button } from '@/components/ui/Button';
 import { ImageUploader } from '@/components/ui/ImageUploader';
 import { RichTextEditor } from '@/components/ui/RichTextEditor';
+import { useAutoSave } from '@/hooks/useAutoSave';
+
+interface ArticleFormData {
+  title: string;
+  slug: string;
+  excerpt: string;
+  content: string;
+  category: string;
+  tags: string;
+  coverImage: string;
+  readTime: number;
+  featured: boolean;
+  status: string;
+}
 
 interface Article {
   id: string;
@@ -25,9 +40,9 @@ interface Article {
 export default function EditArticlePage() {
   const router = useRouter();
   const params = useParams();
-  const articleId = params.id as string;
-
-  const [formData, setFormData] = useState({
+  const id = params.id as string;
+  
+  const [formData, setFormData] = useState<ArticleFormData>({
     title: '',
     slug: '',
     excerpt: '',
@@ -42,54 +57,96 @@ export default function EditArticlePage() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [fetchLoading, setFetchLoading] = useState(true);
+  const [fetchError, setFetchError] = useState('');
 
-  // 获取文章详情
+  const STORAGE_KEY = `article-draft-${id}`;
+
+  const {
+    lastSaved,
+    isDirty,
+    restoreDraft,
+    clearDraft,
+    saveDraft,
+  } = useAutoSave(formData, { key: STORAGE_KEY, interval: 30000 });
+
+  // 页面加载时获取文章数据
   useEffect(() => {
     const fetchArticle = async () => {
-      setLoading(true);
-      try {
-        const token = localStorage.getItem('admin_token');
-        if (!token) {
-          router.push('/admin/login');
-          return;
-        }
+      const token = localStorage.getItem('admin_token');
+      if (!token) {
+        router.push('/admin/login');
+        return;
+      }
 
+      try {
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
-        const response = await fetch(`${apiUrl}/articles/${articleId}`, {
+        const response = await fetch(`${apiUrl}/articles/${id}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
 
-        if (response.ok) {
-          const data = await response.json();
+        if (!response.ok) {
+          if (response.status === 404) {
+            setFetchError('文章不存在');
+          } else if (response.status === 401) {
+            router.push('/admin/login');
+            return;
+          } else {
+            setFetchError('获取文章失败');
+          }
+          setFetchLoading(false);
+          return;
+        }
+
+        const data = await response.json();
+        
+        if (data.success && data.data) {
           const article: Article = data.data;
-          setFormData({
-            title: article.title || '',
-            slug: article.slug || '',
-            excerpt: article.excerpt || '',
-            content: article.content || '',
-            category: article.category || 'AI真相揭秘',
-            tags: Array.isArray(article.tags) ? article.tags.join(', ') : '',
-            coverImage: article.coverImage || '',
-            readTime: article.readTime || 5,
-            featured: article.featured || false,
-            status: article.status || 'DRAFT',
-          });
+          
+          // 检查是否有草稿需要恢复
+          const draft = restoreDraft();
+          if (draft) {
+            // 使用草稿数据，但保持ID
+            setFormData(draft);
+          } else {
+            // 使用API返回的数据
+            setFormData({
+              title: article.title,
+              slug: article.slug,
+              excerpt: article.excerpt,
+              content: article.content,
+              category: article.category,
+              tags: Array.isArray(article.tags) ? article.tags.join(', ') : '',
+              coverImage: article.coverImage || '',
+              readTime: article.readTime,
+              featured: article.featured,
+              status: article.status,
+            });
+          }
         } else {
-          setError('获取文章失败');
+          setFetchError('文章数据格式错误');
         }
       } catch (err) {
-        setError('网络错误');
+        setFetchError('网络错误，请检查API连接');
       } finally {
-        setLoading(false);
+        setFetchLoading(false);
       }
     };
 
-    if (articleId) {
+    if (id) {
       fetchArticle();
     }
-  }, [articleId, router]);
+  }, [id, router, restoreDraft]);
+
+  // 预览功能
+  const handlePreview = () => {
+    // 保存到 localStorage
+    saveDraft();
+    // 打开预览页面
+    window.open(`/admin/preview?type=article&id=${id}&draft=true`, '_blank');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,7 +161,7 @@ export default function EditArticlePage() {
 
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
-      const response = await fetch(`${apiUrl}/articles/${articleId}`, {
+      const response = await fetch(`${apiUrl}/articles/${id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -119,21 +176,57 @@ export default function EditArticlePage() {
       const data = await response.json();
 
       if (data.success) {
+        // 保存成功后清除草稿
+        clearDraft();
+        toast.success('文章保存成功');
         router.push('/admin/articles');
       } else {
-        setError(data.error || '保存失败');
+        setError(data.error || '更新失败');
+        toast.error('保存失败: ' + (data.error || '未知错误'));
       }
     } catch (err) {
       setError('网络错误');
+      toast.error('保存失败: 网络错误');
     } finally {
       setSaving(false);
     }
   };
 
-  if (loading) {
+  // 加载中状态
+  if (fetchLoading) {
     return (
       <div className="min-h-screen bg-[#FAFAF8] flex items-center justify-center">
-        <div className="text-[#7A7670]">加载中...</div>
+        <div className="text-center">
+          <div className="animate-spin w-8 h-8 border-2 border-[#C9A89A] border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-[#7A7670]">加载中...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 获取失败状态
+  if (fetchError) {
+    return (
+      <div className="min-h-screen bg-[#FAFAF8]">
+        <header className="bg-white border-b border-[#E5E2DE]">
+          <Container className="py-4">
+            <Link href="/admin/articles" className="text-[#2C2C2C] hover:text-[#C9A89A]">
+              ← 返回文章列表
+            </Link>
+          </Container>
+        </header>
+        <Container className="py-12">
+          <div className="max-w-md mx-auto text-center">
+            <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-semibold text-[#2C2C2C] mb-2">{fetchError}</h2>
+            <p className="text-[#7A7670] mb-6">无法加载文章数据，请稍后重试</p>
+            <Button onClick={() => window.location.reload()}>重新加载</Button>
+          </div>
+        </Container>
       </div>
     );
   }
@@ -142,13 +235,38 @@ export default function EditArticlePage() {
     <div className="min-h-screen bg-[#FAFAF8]">
       <header className="bg-white border-b border-[#E5E2DE]">
         <Container className="py-4">
-          <div className="flex items-center gap-4">
-            <Link href="/admin/articles" className="text-[#2C2C2C] hover:text-[#C9A89A]">
-              ← 返回
-            </Link>
-            <h1 className="text-xl font-serif font-bold text-[#2C2C2C]">
-              编辑文章
-            </h1>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Link href="/admin/articles" className="text-[#2C2C2C] hover:text-[#C9A89A]">
+                ← 返回
+              </Link>
+              <h1 className="text-xl font-serif font-bold text-[#2C2C2C]">
+                编辑文章
+              </h1>
+            </div>
+            <div className="flex items-center gap-4">
+              {/* 自动保存状态 */}
+              <div className="text-sm text-[#7A7670]">
+                {isDirty ? (
+                  <span className="text-[#C9A89A]">● 有未保存的更改</span>
+                ) : lastSaved ? (
+                  <span>✓ 已保存 {lastSaved.toLocaleTimeString()}</span>
+                ) : null}
+              </div>
+              {/* 预览按钮 */}
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={handlePreview}
+                className="flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                预览
+              </Button>
+            </div>
           </div>
         </Container>
       </header>
@@ -183,6 +301,7 @@ export default function EditArticlePage() {
                 value={formData.slug}
                 onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
                 className="w-full px-4 py-3 rounded-lg border border-[#E5E2DE] focus:border-[#C9A89A] focus:ring-2 focus:ring-[#C9A89A]/20 outline-none"
+                placeholder="例如: cursor-efficiency-test"
               />
             </div>
 
@@ -280,13 +399,19 @@ export default function EditArticlePage() {
               >
                 <option value="DRAFT">草稿</option>
                 <option value="PUBLISHED">发布</option>
-                <option value="ARCHIVED">归档</option>
               </select>
             </div>
 
             <div className="flex gap-4 pt-4">
               <Button type="submit" disabled={saving}>
-                {saving ? '保存中...' : '保存修改'}
+                {saving ? '保存中...' : '保存更改'}
+              </Button>
+              <Button type="button" variant="outline" onClick={handlePreview}>
+                <svg className="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                预览
               </Button>
               <Link href="/admin/articles">
                 <Button variant="outline" type="button">
@@ -294,6 +419,10 @@ export default function EditArticlePage() {
                 </Button>
               </Link>
             </div>
+
+            <p className="text-xs text-[#A8A49D]">
+              提示：按 Ctrl+S 可手动保存草稿
+            </p>
           </form>
         </div>
       </Container>

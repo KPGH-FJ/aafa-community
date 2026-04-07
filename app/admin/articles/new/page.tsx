@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { toast } from 'sonner';
 import { Container } from '@/components/ui/Container';
 import { Button } from '@/components/ui/Button';
 import { ImageUploader } from '@/components/ui/ImageUploader';
@@ -49,6 +50,7 @@ export default function NewArticlePage() {
     restoreDraft,
     clearDraft,
     setHasRestoredDraft,
+    saveDraft,
   } = useAutoSave(formData, { key: STORAGE_KEY, interval: 30000 });
 
   // 页面加载时检查是否有草稿
@@ -74,6 +76,14 @@ export default function NewArticlePage() {
     clearDraft();
     setShowRestorePrompt(false);
     setHasRestoredDraft(false);
+  };
+
+  // 预览功能
+  const handlePreview = () => {
+    // 保存到 localStorage
+    saveDraft();
+    // 打开预览页面
+    window.open('/admin/preview?type=article&draft=true', '_blank');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -106,12 +116,15 @@ export default function NewArticlePage() {
       if (data.success) {
         // 发布成功后清除草稿
         clearDraft();
+        toast.success('文章创建成功');
         router.push('/admin/articles');
       } else {
         setError(data.error || '创建失败');
+        toast.error('创建失败: ' + (data.error || '未知错误'));
       }
     } catch (err) {
       setError('网络错误');
+      toast.error('创建失败: 网络错误');
     } finally {
       setLoading(false);
     }
@@ -130,13 +143,28 @@ export default function NewArticlePage() {
                 新建文章
               </h1>
             </div>
-            {/* 自动保存状态 */}
-            <div className="text-sm text-[#7A7670]">
-              {isDirty ? (
-                <span className="text-[#C9A89A]">● 有未保存的更改</span>
-              ) : lastSaved ? (
-                <span>✓ 已保存 {lastSaved.toLocaleTimeString()}</span>
-              ) : null}
+            <div className="flex items-center gap-4">
+              {/* 自动保存状态 */}
+              <div className="text-sm text-[#7A7670]">
+                {isDirty ? (
+                  <span className="text-[#C9A89A]">● 有未保存的更改</span>
+                ) : lastSaved ? (
+                  <span>✓ 已保存 {lastSaved.toLocaleTimeString()}</span>
+                ) : null}
+              </div>
+              {/* 预览按钮 */}
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={handlePreview}
+                className="flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                预览
+              </Button>
             </div>
           </div>
         </Container>
@@ -303,6 +331,13 @@ export default function NewArticlePage() {
             <div className="flex gap-4 pt-4">
               <Button type="submit" disabled={loading}>
                 {loading ? '创建中...' : '创建文章'}
+              </Button>
+              <Button type="button" variant="outline" onClick={handlePreview}>
+                <svg className="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                预览
               </Button>
               <Link href="/admin/articles">
                 <Button variant="outline" type="button">

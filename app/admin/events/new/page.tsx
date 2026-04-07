@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { toast } from 'sonner';
 import { Container } from '@/components/ui/Container';
 import { Button } from '@/components/ui/Button';
 import { ImageUploader } from '@/components/ui/ImageUploader';
@@ -22,6 +23,14 @@ export default function NewEventPage() {
     price: '',
     tags: '',
   });
+
+  // 预览功能
+  const handlePreview = () => {
+    // 保存到 localStorage
+    localStorage.setItem('event-draft-new', JSON.stringify(formData));
+    // 打开预览页面
+    window.open('/admin/preview?type=event&draft=true', '_blank');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,12 +62,15 @@ export default function NewEventPage() {
       const data = await response.json();
 
       if (data.success) {
+        toast.success('活动创建成功');
         router.push('/admin/events');
       } else {
         setError(data.error || '创建失败');
+        toast.error('创建失败: ' + (data.error || '未知错误'));
       }
     } catch (err) {
       setError('网络错误，请重试');
+      toast.error('创建失败: 网络错误');
     } finally {
       setLoading(false);
     }
@@ -68,13 +80,28 @@ export default function NewEventPage() {
     <div className="min-h-screen bg-[#FAFAF8]">
       <header className="bg-white border-b border-[#E5E2DE]">
         <Container className="py-4">
-          <div className="flex items-center gap-4">
-            <Link href="/admin/events" className="text-[#2C2C2C] hover:text-[#C9A89A]">
-              ← 返回
-            </Link>
-            <h1 className="text-xl font-serif font-bold text-[#2C2C2C]">
-              新建活动
-            </h1>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Link href="/admin/events" className="text-[#2C2C2C] hover:text-[#C9A89A]">
+                ← 返回
+              </Link>
+              <h1 className="text-xl font-serif font-bold text-[#2C2C2C]">
+                新建活动
+              </h1>
+            </div>
+            {/* 预览按钮 */}
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={handlePreview}
+              className="flex items-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+              预览
+            </Button>
           </div>
         </Container>
       </header>
@@ -203,6 +230,13 @@ export default function NewEventPage() {
           <div className="flex gap-4 pt-4">
             <Button type="submit" disabled={loading} className="flex-1">
               {loading ? '创建中...' : '创建活动'}
+            </Button>
+            <Button type="button" variant="outline" onClick={handlePreview}>
+              <svg className="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+              预览
             </Button>
             <Link href="/admin/events">
               <Button variant="outline" type="button">

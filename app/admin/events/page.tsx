@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { toast } from 'sonner';
 import { Container } from '@/components/ui/Container';
 import { Button } from '@/components/ui/Button';
 
@@ -43,6 +44,7 @@ export default function AdminEventsPage() {
       }
     } catch (error) {
       console.error('获取活动失败:', error);
+      toast.error('获取活动列表失败');
     } finally {
       setLoading(false);
     }
@@ -63,9 +65,14 @@ export default function AdminEventsPage() {
 
       if (response.ok) {
         setEvents(events.filter(e => e.id !== id));
+        toast.success('活动删除成功');
+      } else {
+        const data = await response.json();
+        toast.error('删除失败: ' + (data.error || '未知错误'));
       }
     } catch (error) {
       console.error('删除活动失败:', error);
+      toast.error('删除失败: 网络错误');
     }
   };
 
