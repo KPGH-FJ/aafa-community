@@ -1,29 +1,75 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Container } from '@/components/ui/Container';
 import { Button } from '@/components/ui/Button';
 
-export default function NewEventPage() {
+interface Event {
+  id: string;
+  title: string;
+  description: string;
+  date: string;
+  time: string;
+  location: string;
+  maxAttendees: number | null;
+  price: number;
+  tags: string[];
+  status: string;
+}
+
+export default function EditEventPage() {
   const router = useRouter();
+  const params = useParams();
+  const eventId = params.id as string;
+  
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    date: '',
-    time: '',
-    location: '',
-    maxAttendees: '',
-    price: '',
-    tags: '',
-  });
+  const [formData, setFormData] = useState<Event | null>(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem('admin_token');
+    if (!token) {
+      router.push('/admin/login');
+      return;
+    }
+    fetchEvent(token);
+  }, [eventId, router]);
+
+  const fetchEvent = async (token: string) => {
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+      const response = await fetch(`${apiUrl}/events/${eventId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await response.json();
+      if (data.success) {
+        const event = data.data;
+        // 格式化日期为 YYYY-MM-DD
+        const date = new Date(event.date);
+        const formattedDate = date.toISOString().split('T')[0];
+        
+        setFormData({
+          ...event,
+          date: formattedDate,
+        });
+      } else {
+        setError('获取活动信息失败');
+      }
+    } catch (err) {
+      setError('网络错误');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    if (!formData) return;
+    
+    setSaving(true);
     setError('');
 
     const token = localStorage.getItem('admin_token');
@@ -34,17 +80,15 @@ export default function NewEventPage() {
 
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
-      const response = await fetch(`${apiUrl}/events`, {
-        method: 'POST',
+      const response = await fetch(`${apiUrl}/events/${eventId}`, {
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           ...formData,
-          maxAttendees: formData.maxAttendees ? parseInt(formData.maxAttendees) : null,
-          price: parseInt(formData.price) || 0,
-          tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean),
+          maxAttendees: formData.maxAttendees || null,
         }),
       });
 
@@ -53,14 +97,30 @@ export default function NewEventPage() {
       if (data.success) {
         router.push('/admin/events');
       } else {
-        setError(data.error || '创建失败');
+        setError(data.error || '更新失败');
       }
     } catch (err) {
       setError('网络错误，请重试');
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#FAFAF8] flex items-center justify-center">
+        <div className="text-[#7A7670]">加载中...</div>
+      </div>
+    );
+  }
+
+  if (!formData) {
+    return (
+      <div className="min-h-screen bg-[#FAFAF8] flex items-center justify-center">
+        <div className="text-[#7A7670]">活动不存在</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#FAFAF8]">
@@ -71,7 +131,7 @@ export default function NewEventPage() {
               ← 返回
             </Link>
             <h1 className="text-xl font-serif font-bold text-[#2C2C2C]">
-              新建活动
+              编辑活动
             </h1>
           </div>
         </Container>
@@ -159,8 +219,8 @@ export default function NewEventPage() {
               <input
                 type="number"
                 min="1"
-                value={formData.maxAttendees}
-                onChange={(e) => setFormData({ ...formData, maxAttendees: e.target.value })}
+                value={formData.maxAttendees || ''}
+                onChange={(e) => setFormData({ ...formData, maxAttendees: e.target.value ? parseInt(e.target.value) : null })}
                 className="w-full px-4 py-2 border border-[#E5E2DE] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C9A89A]"
               />
             </div>
@@ -173,7 +233,7 @@ export default function NewEventPage() {
                 min="0"
                 required
                 value={formData.price}
-                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, price: parseInt(e.target.value) || 0 })}
                 className="w-full px-4 py-2 border border-[#E5E2DE] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C9A89A]"
               />
             </div>
@@ -181,20 +241,23 @@ export default function NewEventPage() {
 
           <div>
             <label className="block text-sm font-medium text-[#5C5852] mb-2">
-              标签 (逗号分隔)
+              状态
             </label>
-            <input
-              type="text"
-              placeholder="例如: 展览, 艺术, 上海"
-              value={formData.tags}
-              onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+            <select
+              value={formData.status}
+              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
               className="w-full px-4 py-2 border border-[#E5E2DE] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C9A89A]"
-            />
+            >
+              <option value="UPCOMING">即将开始</option>
+              <option value="ONGOING">进行中</option>
+              <option value="PAST">已结束</option>
+              <option value="CANCELLED">已取消</option>
+            </select>
           </div>
 
           <div className="flex gap-4 pt-4">
-            <Button type="submit" disabled={loading} className="flex-1">
-              {loading ? '创建中...' : '创建活动'}
+            <Button type="submit" disabled={saving} className="flex-1">
+              {saving ? '保存中...' : '保存修改'}
             </Button>
             <Link href="/admin/events">
               <Button variant="outline" type="button">
