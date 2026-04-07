@@ -1,15 +1,32 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Container } from '@/components/ui/Container';
 import { Button } from '@/components/ui/Button';
 import { ImageUploader } from '@/components/ui/ImageUploader';
+import { RichTextEditor } from '@/components/ui/RichTextEditor';
+import { useAutoSave } from '@/hooks/useAutoSave';
+
+interface ArticleFormData {
+  title: string;
+  slug: string;
+  excerpt: string;
+  content: string;
+  category: string;
+  tags: string;
+  coverImage: string;
+  readTime: number;
+  featured: boolean;
+  status: string;
+}
+
+const STORAGE_KEY = 'article-draft-new';
 
 export default function NewArticlePage() {
   const router = useRouter();
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<ArticleFormData>({
     title: '',
     slug: '',
     excerpt: '',
@@ -23,6 +40,41 @@ export default function NewArticlePage() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showRestorePrompt, setShowRestorePrompt] = useState(false);
+
+  const {
+    lastSaved,
+    isDirty,
+    hasRestoredDraft,
+    restoreDraft,
+    clearDraft,
+    setHasRestoredDraft,
+  } = useAutoSave(formData, { key: STORAGE_KEY, interval: 30000 });
+
+  // 页面加载时检查是否有草稿
+  useEffect(() => {
+    const draft = restoreDraft();
+    if (draft) {
+      setShowRestorePrompt(true);
+    }
+  }, [restoreDraft]);
+
+  // 恢复草稿
+  const handleRestore = () => {
+    const draft = restoreDraft();
+    if (draft) {
+      setFormData(draft);
+    }
+    setShowRestorePrompt(false);
+    setHasRestoredDraft(false);
+  };
+
+  // 放弃草稿
+  const handleDiscard = () => {
+    clearDraft();
+    setShowRestorePrompt(false);
+    setHasRestoredDraft(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,6 +104,8 @@ export default function NewArticlePage() {
       const data = await response.json();
 
       if (data.success) {
+        // 发布成功后清除草稿
+        clearDraft();
         router.push('/admin/articles');
       } else {
         setError(data.error || '创建失败');
@@ -67,16 +121,53 @@ export default function NewArticlePage() {
     <div className="min-h-screen bg-[#FAFAF8]">
       <header className="bg-white border-b border-[#E5E2DE]">
         <Container className="py-4">
-          <div className="flex items-center gap-4">
-            <Link href="/admin" className="text-[#2C2C2C] hover:text-[#C9A89A]">
-              ← 返回
-            </Link>
-            <h1 className="text-xl font-serif font-bold text-[#2C2C2C]">
-              新建文章
-            </h1>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Link href="/admin" className="text-[#2C2C2C] hover:text-[#C9A89A]">
+                ← 返回
+              </Link>
+              <h1 className="text-xl font-serif font-bold text-[#2C2C2C]">
+                新建文章
+              </h1>
+            </div>
+            {/* 自动保存状态 */}
+            <div className="text-sm text-[#7A7670]">
+              {isDirty ? (
+                <span className="text-[#C9A89A]">● 有未保存的更改</span>
+              ) : lastSaved ? (
+                <span>✓ 已保存 {lastSaved.toLocaleTimeString()}</span>
+              ) : null}
+            </div>
           </div>
         </Container>
       </header>
+
+      {/* 恢复草稿提示 */}
+      {showRestorePrompt && (
+        <div className="bg-[#E8DED4] border-b border-[#D4C4B5]">
+          <Container className="py-4">
+            <div className="flex items-center justify-between">
+              <p className="text-[#5C5852]">
+                发现未保存的草稿（{lastSaved?.toLocaleString()}），是否恢复？
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleRestore}
+                  className="px-4 py-2 bg-[#C9A89A] text-white rounded-lg hover:bg-[#B89789] transition-colors"
+                >
+                  恢复草稿
+                </button>
+                <button
+                  onClick={handleDiscard}
+                  className="px-4 py-2 bg-white text-[#5C5852] rounded-lg hover:bg-[#F0EEEB] transition-colors"
+                >
+                  放弃
+                </button>
+              </div>
+            </div>
+          </Container>
+        </div>
+      )}
 
       <Container className="py-8">
         <div className="bg-white rounded-xl border border-[#E5E2DE] p-6">
@@ -129,12 +220,10 @@ export default function NewArticlePage() {
               <label className="block text-sm font-medium text-[#5C5852] mb-2">
                 正文内容 *
               </label>
-              <textarea
-                required
-                rows={10}
-                value={formData.content}
-                onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                className="w-full px-4 py-3 rounded-lg border border-[#E5E2DE] focus:border-[#C9A89A] focus:ring-2 focus:ring-[#C9A89A]/20 outline-none font-mono"
+              <RichTextEditor
+                content={formData.content}
+                onChange={(content) => setFormData({ ...formData, content })}
+                placeholder="开始写作..."
               />
             </div>
 
@@ -221,6 +310,10 @@ export default function NewArticlePage() {
                 </Button>
               </Link>
             </div>
+
+            <p className="text-xs text-[#A8A49D]">
+              提示：按 Ctrl+S 可手动保存草稿
+            </p>
           </form>
         </div>
       </Container>

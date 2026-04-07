@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -32,6 +33,9 @@ export default function RootLayout({
       lang="zh-CN"
       className={`${inter.variable} h-full antialiased`}
     >
+      <head>
+        <GoogleAnalytics measurementId={process.env.NEXT_PUBLIC_GA_ID || ''} />
+      </head>
       <body className="min-h-full flex flex-col bg-[#FAFAF8] text-[#2C2C2C]">
         <Header />
         <main className="flex-1">{children}</main>
