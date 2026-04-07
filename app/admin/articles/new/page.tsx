@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Container } from '@/components/ui/Container';
 import { Button } from '@/components/ui/Button';
+import { ImageUploader } from '@/components/ui/ImageUploader';
 
 export default function NewArticlePage() {
   const router = useRouter();
@@ -168,32 +169,22 @@ export default function NewArticlePage() {
               </div>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-[#5C5852] mb-2">
-                  封面图片 URL
-                </label>
-                <input
-                  type="text"
-                  value={formData.coverImage}
-                  onChange={(e) => setFormData({ ...formData, coverImage: e.target.value })}
-                  className="w-full px-4 py-3 rounded-lg border border-[#E5E2DE] focus:border-[#C9A89A] outline-none"
-                  placeholder="/images/article-1.jpg"
-                />
-              </div>
+            <ImageUploader
+              value={formData.coverImage}
+              onChange={(url) => setFormData({ ...formData, coverImage: url })}
+            />
 
-              <div>
-                <label className="block text-sm font-medium text-[#5C5852] mb-2">
-                  阅读时间 (分钟)
-                </label>
-                <input
-                  type="number"
-                  min={1}
-                  value={formData.readTime}
-                  onChange={(e) => setFormData({ ...formData, readTime: parseInt(e.target.value) })}
-                  className="w-full px-4 py-3 rounded-lg border border-[#E5E2DE] focus:border-[#C9A89A] outline-none"
-                />
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-[#5C5852] mb-2">
+                阅读时间 (分钟)
+              </label>
+              <input
+                type="number"
+                min={1}
+                value={formData.readTime}
+                onChange={(e) => setFormData({ ...formData, readTime: parseInt(e.target.value) })}
+                className="w-full px-4 py-3 rounded-lg border border-[#E5E2DE] focus:border-[#C9A89A] outline-none"
+              />
             </div>
 
             <div className="flex items-center gap-4">

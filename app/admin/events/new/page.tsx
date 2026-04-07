@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Container } from '@/components/ui/Container';
 import { Button } from '@/components/ui/Button';
+import { ImageUploader } from '@/components/ui/ImageUploader';
 
 export default function NewEventPage() {
   const router = useRouter();
@@ -13,6 +14,7 @@ export default function NewEventPage() {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
+    coverImage: '',
     date: '',
     time: '',
     location: '',
@@ -110,6 +112,12 @@ export default function NewEventPage() {
               className="w-full px-4 py-2 border border-[#E5E2DE] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C9A89A]"
             />
           </div>
+
+          <ImageUploader
+            value={formData.coverImage}
+            onChange={(url) => setFormData({ ...formData, coverImage: url })}
+            label="活动封面"
+          />
 
           <div className="grid grid-cols-2 gap-4">
             <div>
