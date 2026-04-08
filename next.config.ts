@@ -13,6 +13,17 @@ const nextConfig: NextConfig = {
   // 其他配置
   trailingSlash: false,
   
+  // 重写规则 - 移除尾部斜杠
+  async redirects() {
+    return [
+      {
+        source: '/admin/articles/edit/:id/',
+        destination: '/admin/articles/edit/:id',
+        permanent: true,
+      },
+    ];
+  },
+  
   // 添加 CSP 配置，允许 eval（某些依赖需要）
   async headers() {
     return [
