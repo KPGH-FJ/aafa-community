@@ -42,6 +42,18 @@ export default function EditArticlePage() {
   const params = useParams();
   const id = params?.id as string;
   
+  // 确保 params 已加载
+  if (!id) {
+    return (
+      <div className="min-h-screen bg-[#FAFAF8] flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin w-8 h-8 border-2 border-[#C9A89A] border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-[#7A7670]">加载中...</p>
+        </div>
+      </div>
+    );
+  }
+  
   const [formData, setFormData] = useState<ArticleFormData>({
     title: '',
     slug: '',
