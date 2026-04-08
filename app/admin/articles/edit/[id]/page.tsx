@@ -40,7 +40,7 @@ interface Article {
 export default function EditArticlePage() {
   const router = useRouter();
   const params = useParams();
-  const id = params.id as string;
+  const id = params?.id as string;
   
   const [formData, setFormData] = useState<ArticleFormData>({
     title: '',
