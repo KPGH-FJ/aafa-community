@@ -1,4 +1,7 @@
-name: CI
+# 此文件已被新的 frontend.yml 替代
+# 请查看 .github/workflows/frontend.yml 获取完整的 CI/CD 配置
+
+name: CI (Legacy)
 
 on:
   push:
@@ -29,7 +32,3 @@ jobs:
         run: npm run build
         env:
           NEXT_TELEMETRY_DISABLED: 1
-
-# 注意：Vercel 会自动从 GitHub 仓库部署
-# 无需在此配置额外的部署步骤
-# 只需在 Vercel 控制台连接 GitHub 仓库即可
