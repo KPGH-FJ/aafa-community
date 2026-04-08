@@ -10,6 +10,10 @@ import { ImageUploader } from '@/components/ui/ImageUploader';
 import { RichTextEditor } from '@/components/ui/RichTextEditor';
 import { useAutoSave } from '@/hooks/useAutoSave';
 
+// 动态段配置 - 禁用静态生成，强制动态渲染
+export const dynamic = 'force-dynamic';
+export const dynamicParams = true;
+
 interface ArticleFormData {
   title: string;
   slug: string;
