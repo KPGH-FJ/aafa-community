@@ -3,14 +3,15 @@ export interface Article {
   id: string;
   title: string;
   excerpt: string;
-  content: string;
+  content?: string;
   coverImage: string;
   category: string;
-  tags: string[];
+  tags?: string[];
   author: Author;
   publishedAt: string;
   readTime: number;
   featured?: boolean;
+  createdAt?: string;
 }
 
 // 作者类型

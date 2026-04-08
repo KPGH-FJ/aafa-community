@@ -7,20 +7,7 @@ import { Card, CardImage, CardContent, CardTitle, CardDescription, CardFooter } 
 import { Tag } from '@/components/ui/Tag';
 import { Container } from '@/components/ui/Container';
 import { Pagination } from '@/components/ui/Pagination';
-
-interface Article {
-  id: string;
-  title: string;
-  excerpt: string;
-  coverImage: string;
-  category: string;
-  readTime: number;
-  featured: boolean;
-  author?: {
-    name: string;
-  };
-  createdAt: string;
-}
+import type { Article } from '@/types';
 
 interface ArticlesResponse {
   data: Article[];
@@ -213,7 +200,7 @@ export default function ArticlesPage() {
                         <span className="text-sm text-[#5C5852]">{article.author?.name || 'AAFA'}</span>
                       </div>
                       <span className="text-xs text-[#A8A49D]">
-                        {new Date(article.createdAt).toLocaleDateString()}
+                        {article.createdAt ? new Date(article.createdAt).toLocaleDateString() : article.publishedAt ? new Date(article.publishedAt).toLocaleDateString() : ''}
                       </span>
                     </CardFooter>
                   </Card>
