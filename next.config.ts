@@ -11,7 +11,7 @@ const nextConfig: NextConfig = {
   },
   
   // 其他配置
-  trailingSlash: true,
+  trailingSlash: false,
   
   // 添加 CSP 配置，允许 eval（某些依赖需要）
   async headers() {
